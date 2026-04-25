@@ -1,0 +1,36 @@
+# savefig stuff
+savefig.format:		pdf
+savefig.bbox:	    tight
+savefig.pad_inches: 0.1
+savefig.dpi: 300
+savefig.facecolor: white
+savefig.edgecolor: white
+
+# text formatting
+font.size:			      10
+text.color:			      black
+text.usetex:		      True
+text.latex.preamble:  \usepackage{amsmath}
+pdf.fonttype:         42
+
+# line formatting
+lines.linewidth:         0.8
+lines.solid_capstyle:    butt
+lines.solid_joinstyle:  miter
+
+# axes formatting
+axes.linewidth:     0.8
+xtick.direction:    in
+ytick.direction:    in
+xtick.major.size:   3.0
+ytick.major.size:   3.0
+xtick.minor.size:   1.5
+ytick.minor.size:   1.5
+xtick.labelsize:    9
+ytick.labelsize:    9
+
+# cmap, viridis is colorblind
+image.cmap:		    magma	
+
+# color cycler, Set2 (do not want to call explicitly this is just easier)
+axes.prop_cycle: cycler("color", ["#66c2a5","#fc8d62","#8da0cb","#e78ac3","#a6d854","#ffd92f","#e5c494","#b3b3b3"])
