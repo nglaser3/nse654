@@ -48,7 +48,7 @@ def yscale(flux):
     return E_mid * flux / dE
 
 def steady(source):
-    M = np.diag(sigma_t) - sigma_s - np.diag(chi*nu_sigma_f)
+    M = np.diag(sigma_t) - sigma_s - np.outer(chi, nu_sigma_f)
     return sla.solve(M, source)
 
 steady_flux = steady(Q)
@@ -60,8 +60,8 @@ fig.savefig("figs/q3b")
 
 # =========================================================================== #
 
-def backward_euler():
-    eta_ = np.diag(v)@(np.diag(sigma_t) - sigma_s - np.diag(chi*nu_sigma_f))
+def backward_euler(v, sigma_t, sigma_s, chi_nu_sigma_f, Q):
+    eta_ = np.diag(v)@(np.diag(sigma_t) - sigma_s - chi_nu_sigma_f)
     fluxes = []
     fluxes.append(np.zeros_like(Q))
     for i, dt in enumerate(dts):
@@ -71,7 +71,7 @@ def backward_euler():
         fluxes.append(flux)
     return fluxes
 
-fluxes = backward_euler()
+fluxes = backward_euler(v, sigma_t, sigma_s, np.outer(chi, nu_sigma_f), Q)
 
 fig, ax = plt.subplots()
 for it in (1, 250, 500, 600):
@@ -90,10 +90,10 @@ fig.savefig("figs/q3cii")
 
 flux_collapse = steady(Q)
 
-flux_int = np.dot(flux_collapse, dE)
+flux_int = np.sum(flux_collapse)
 
-collapse = lambda param: np.dot(param*flux_collapse, dE) / flux_int
-v1 = collapse(v)
+collapse = lambda param: np.dot(param,flux_collapse) / flux_int
+v1 = 1 / collapse(1/v)
 sigma_t1 = collapse(sigma_t)
 sigma_s1 = collapse(sigma_s_total)
 sigma_f1 = collapse(sigma_f)
@@ -120,4 +120,67 @@ rf = [sigma_f1 * flux for flux in fluxes]
 fig, ax = plt.subplots()
 ax.semilogx(times, rf)
 fig.savefig("figs/q3e")
+plt.show()
+
+# =========================================================================== #
+
+def collapse(bounds, dE, flux, v, sigma_t, sigma_f, Q):
+    _v = []
+    _sigmat = []
+    _sigma_f =[]
+    _Q = []
+    num_groups = len(bounds) - 1
+    for i in range(num_groups):
+        low, hi = bounds[i:i+2]
+        _collapse = lambda param: np.sum(param[low : hi] * flux[low : hi]) / np.sum(flux[low : hi])
+        _v.append(_collapse(1/v))
+        _sigmat.append(_collapse(sigma_t))
+        _sigma_f.append(_collapse(sigma_f))
+        _Q.append(np.sum(Q[low: hi]))
+    return 1/np.asarray(_v), np.asarray(_sigmat), np.asarray(_sigma_f),  np.asarray(_Q)
+
+def collapse_matrix(bounds, dE, matrix, flux):
+    num_groups = len(bounds) - 1
+    _matrix = np.zeros((num_groups, num_groups))
+
+    for i in range(num_groups):
+        out_low, out_hi = bounds[i: i+2]
+        for j in range(num_groups):
+            in_low, in_hi = bounds[j: j+2]
+            chunk = matrix[out_low: out_hi, in_low: in_hi]
+            _flux = flux[in_low:in_hi]
+            top = np.sum(chunk @ _flux)
+            bottom = np.sum(_flux)
+            _matrix[i, j] = top/bottom
+    return _matrix
+
+flux_collapse = steady(Q)
+bounds2 = [0, 180, 361]
+_collapse = lambda _bounds: collapse(_bounds, dE, flux_collapse, v, sigma_t, sigma_f, Q) 
+v2, sigma_t2, sigma_f2, Q2 = _collapse(bounds2)
+sigma_s2 = collapse_matrix(bounds2, dE, sigma_s, flux_collapse)
+chi_nu_sigmaf2 = collapse_matrix(bounds2, dE, np.outer(chi, nu_sigma_f), flux_collapse)
+
+
+fluxes = backward_euler(v2, sigma_t2, sigma_s2, chi_nu_sigmaf2, Q2)
+rf = [np.dot(sigma_f2, flux) for flux in fluxes]
+fig, ax = plt.subplots()
+ax.semilogx(times, rf)
+fig.savefig("figs/q4a")
+plt.show()
+
+flux_collapse = steady(Q)
+casmo8 = np.array([1.0e-11, 5.8e-2,1.4e-1, 2.8e-1, 6.25e-1, 4.0, 5.53e3, 8.21e5, 1.0e7])
+casmo8_bounds = np.searchsorted(E, casmo8)
+casmo8_bounds[-1] = len(dE)
+v8, sigma_t8, sigma_f8, Q8 = _collapse(casmo8_bounds)
+sigma_s8 = collapse_matrix(casmo8_bounds, dE, sigma_s, flux_collapse)
+chi_nu_sigmaf8 = collapse_matrix(casmo8_bounds, dE, np.outer(chi, nu_sigma_f), flux_collapse)
+
+
+fluxes = backward_euler(v8, sigma_t8, sigma_s8, chi_nu_sigmaf8, Q8)
+rf = [np.dot(sigma_f8, flux) for flux in fluxes]
+fig, ax = plt.subplots()
+ax.semilogx(times, rf)
+fig.savefig("figs/q4b")
 plt.show()
