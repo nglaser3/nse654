@@ -5,8 +5,13 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 
-\begin{document}
+\title{Homework 1}
+\author{Nathan Glaser}
+\date{\today}
 
+\begin{document}
+\maketitle
+\clearpage
 \section{Question 1}
 To begin, the angular flux is:
 \begin{align*}
@@ -137,7 +142,50 @@ Then, plugging in $\sigma_{t,2}=\sigma_{t,1}$:
 
 \clearpage
 \section{Question 3}
+\subsection{Part A}
+The angular flux at the spaceship should just be $\psi(E)$ when $\hat{\Omega}\cdot\hat{e}_s$ is greater than 0. This occurs when $\theta^*$ is less than $\arcsin(\frac{R_0}{\abs{s}})$, or equivalently, when $\mu^*$ is greater than $\cos(\arcsin(\frac{R_0}{\abs{s}}))=\sqrt{1-\sin^2(\arcsin(\frac{R_0}{\abs{s}}))}=\sqrt{1-\frac{R_0^2}{\abs{s}^2}}$
+\begin{align}
+  \psi(\vec{r},\hat{\Omega}, E) &= 
+    \begin{cases}
+        \psi(E),\ \abs{\mu} \geq \sqrt{1-\frac{R_0^2}{\abs{s}^2}}
+    \end{cases}
+\end{align}
 
+\subsection{Part B}
+The scalar flux is the integral of the angular flux over the solid angle, bounded by the previous restrictions on $\mu$
+
+\begin{align*}
+  \phi(\vec{r}, E) &= 2\int_{\sqrt{1-\frac{R_0^2}{\abs{s}^2}}}^1\dd{\mu}\psi(E)\\
+  &= 2\psi(E)\left(1 - \sqrt{1-\frac{R_0^2}{\abs{s}^2}}\right) 
+\end{align*}
+
+I was unsure how to extend this into the azimuthal axis, without making the patch a square. I was thinking to do bounds for the azimuthal integral as dependent on $theta$, such that the min and max were $\theta^* - \theta$, which I think would trace the outer edge of the circlular patch, but again was unsure. 
+
+\subsection{Part C}
+The angular flux with the circumstellar medium is the same as without, just attenuated the distance $d$ through the medium:
+
+\begin{align*}
+  \psi(\vec{r},\hat{\Omega}, E) &= e^{-d\sigma_t(E)}\psi(E)
+\end{align*}
+
+To find $d$, we need to use the law of cosines, to find the total length of the extra side (from where the right angle is formed in the diagram to the space ship) and the vacuum component (where $R_1$ intersects the outer surface in the diagram). For the total length, the formula is, also using the quadratic formula,
+\begin{align*}
+  0 &= d_t^2 -2d_t\abs{\vec{s}}\cos(\theta^*) + \abs{\vec{s}}^2 - R_0^2\\
+  d_t &= \frac{2\abs{\vec{s}}\cos(\theta^*) + \sqrt{4\abs{\vec{s}}^2\cos^2(\theta^*) - 4(\abs{\vec{s}}^2 - R_0^2)}}{2}
+\end{align*}
+And then the vacuum component
+\begin{align*}
+  0 &= d_v^2 -2d_v\abs{\vec{s}}\cos(\theta^*) + \abs{\vec{s}}^2 - R_1^2\\
+  d_v &= \frac{2\abs{\vec{s}}\cos(\theta^*) + \sqrt{4\abs{\vec{s}}^2\cos^2(\theta^*) - 4(\abs{\vec{s}}^2 - R_1^2)}}{2}
+\end{align*}
+
+Then, subtracting the vacuum from the total, we find $d$ to be
+\begin{align*}
+  d &= \frac{2\abs{\vec{s}}\cos(\theta^*) + \sqrt{4\abs{\vec{s}}^2\cos^2(\theta^*) - 4(\abs{\vec{s}}^2 - R_0^2)}}{2} - \frac{2\abs{\vec{s}}\cos(\theta^*) + \sqrt{4\abs{\vec{s}}^2\cos^2(\theta^*) - 4(\abs{\vec{s}}^2 - R_1^2)}}{2} \\
+  &= \frac{\sqrt{4\abs{\vec{s}}^2\cos^2(\theta^*) - 4(\abs{\vec{s}}^2 - R_0^2)} - \sqrt{4\abs{\vec{s}}^2\cos^2(\theta^*) - 4(\abs{\vec{s}}^2 - R_1^2)}}{2}
+\end{align*}
+
+subject to the same constrains on $\mu$ as part A. 
 
 \clearpage
 \newcommand{\psig}{\psi^{\gamma}}
@@ -168,7 +216,7 @@ Then, plugging in $\sigma_{t,2}=\sigma_{t,1}$:
   =
   \int_{4\pi}\int_0^{\infty}\dd{E'}\dd{\hat{\Omega}'}\sigma_s^{\gamma}\double \psin\psid
   \\+ \frac{\delta(E - m_ec^2)}{2\pi}\int_0^{\infty}\sigma_p^{\gamma}\renergy\psi\phase
-  \\+ \frac{\chi^{\gamma}(\vec{r}, E'\rightarrow E)}{4\pi}\int_0^{\infty}\dd{E'}\nu^{\gamma}\renergy\sigma_t^n\renergy\psin\left(\vec{r}, \Omega, E', t\right)
+  \\+ \frac{\chi^{\gamma}(\vec{r}, E'\rightarrow E)}{4\pi}\int_{4\pi}\dd{\hat{\Omega}}\int_0^{\infty}\dd{E'}\nu^{\gamma}\renergy\sigma_t^n\renergy\psin\left(\vec{r}, \Omega, E', t\right)
   + q^{\gamma}\phase
 \end{multline*}
 
@@ -180,7 +228,7 @@ Then, plugging in $\sigma_{t,2}=\sigma_{t,1}$:
   =
   \int_{4\pi}\int_0^{\infty}\dd{E'}\dd{\hat{\Omega}'}\sigma_{\gamma,n}^{\gamma}\double \psig\psid
   \\ + \int_{4\pi}\int_0^{\infty}\dd{E'}\dd{\hat{\Omega}'}\sigma_s^{n}\double \psin\psid
-  \\+ \frac{\chi^{n}(\vec{r}, E'\rightarrow E)}{4\pi}\int_0^{\infty}\dd{E'}\nu^{n}\renergy\sigma_f^n\renergy\psin\left(\vec{r}, \Omega, E', t\right)
+  \\+ \frac{\chi^{n}(\vec{r}, E'\rightarrow E)}{4\pi}\int_{4\pi}\dd{\hat{\Omega}'}\int_0^{\infty}\dd{E'}\nu^{n}\renergy\sigma_f^n\renergy\psin\left(\vec{r}, \Omega, E', t\right)
   + q^n\phase
 \end{multline*}
 
