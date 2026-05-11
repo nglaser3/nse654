@@ -76,15 +76,16 @@ fluxes = backward_euler(v, sigma_t, sigma_s, np.outer(chi, nu_sigma_f), Q)
 fig, ax = plt.subplots()
 for it in (1, 250, 500, 600):
     ax.loglog(E_mid, yscale(fluxes[it]), label=f"Step: {it}")
+ax.loglog(E_mid, yscale(steady(Q)), label="Steady")
 ax.legend()
 ax.set_xlabel("Energy  [eV]")
 fig.savefig("figs/q3ci")
 
 fig, ax = plt.subplots()
 rf = [np.dot(sigma_f, flux) for flux in fluxes]
-ax.semilogx(times, rf)
+ax.semilogx(times, rf, label="361 Group")
 ax.set_xlabel("Time  [s]")
-fig.savefig("figs/q3cii")
+#fig.savefig("figs/q3cii")
 
 # =========================================================================== #
 
@@ -97,7 +98,7 @@ v1 = 1 / collapse(1/v)
 sigma_t1 = collapse(sigma_t)
 sigma_s1 = collapse(sigma_s_total)
 sigma_f1 = collapse(sigma_f)
-nu_sigma_f1 = collapse(nu_sigma_f * chi)
+nu_sigma_f1 = collapse(nu_sigma_f)
 
 names = ["v", "sigt", "sigs", "sigf", "nusigf"]
 vals = [v1, sigma_t1, sigma_s1, sigma_f1, nu_sigma_f1]
@@ -117,10 +118,9 @@ for i, dt in enumerate(dts):
     fluxes.append(flux)
 
 rf = [sigma_f1 * flux for flux in fluxes]
-fig, ax = plt.subplots()
-ax.semilogx(times, rf)
-fig.savefig("figs/q3e")
-plt.show()
+#fig, ax = plt.subplots()
+ax.semilogx(times, rf, label = "1 Group")
+#fig.savefig("figs/q3e")
 
 # =========================================================================== #
 
@@ -164,23 +164,30 @@ chi_nu_sigmaf2 = collapse_matrix(bounds2, dE, np.outer(chi, nu_sigma_f), flux_co
 
 fluxes = backward_euler(v2, sigma_t2, sigma_s2, chi_nu_sigmaf2, Q2)
 rf = [np.dot(sigma_f2, flux) for flux in fluxes]
-fig, ax = plt.subplots()
-ax.semilogx(times, rf)
-fig.savefig("figs/q4a")
-plt.show()
+#fig, ax = plt.subplots()
+ax.semilogx(times, rf, label="2 Group")
+#fig.savefig("figs/q4a")
+#plt.show()
 
 flux_collapse = steady(Q)
-casmo8 = np.array([1.0e-11, 5.8e-2,1.4e-1, 2.8e-1, 6.25e-1, 4.0, 5.53e3, 8.21e5, 1.0e7])
-casmo8_bounds = np.searchsorted(E, casmo8)
-casmo8_bounds[-1] = len(dE)
-v8, sigma_t8, sigma_f8, Q8 = _collapse(casmo8_bounds)
-sigma_s8 = collapse_matrix(casmo8_bounds, dE, sigma_s, flux_collapse)
-chi_nu_sigmaf8 = collapse_matrix(casmo8_bounds, dE, np.outer(chi, nu_sigma_f), flux_collapse)
+casmo40 = np.array(
+    [0., 1.5e-2, 3.e-2, 4.2e-2, 5.8e-2, 8.e-2, 1.e-1, 1.4e-1,
+    1.8e-1, 2.2e-1, 2.8e-1, 3.5e-1, 6.25e-1, 8.5e-1, 9.5e-1,
+    9.72e-1, 1.02, 1.097, 1.15, 1.3, 1.5, 1.855, 2.1, 2.6, 3.3, 4.,
+    9.877, 1.5968e1, 2.77e1, 4.8052e1, 1.4873e2, 5.53e3, 9.118e3,
+    1.11e5, 5.e5, 8.21e5, 1.353e6, 2.231e6, 3.679e6, 6.0655e6, 2.e7]
+)
+casmo40_bounds = np.searchsorted(E, casmo40)
+casmo40_bounds[-1] = len(dE)
+v40, sigma_t40, sigma_f40, Q40 = _collapse(casmo40_bounds)
+sigma_s40 = collapse_matrix(casmo40_bounds, dE, sigma_s, flux_collapse)
+chi_nu_sigmaf40 = collapse_matrix(casmo40_bounds, dE, np.outer(chi, nu_sigma_f), flux_collapse)
 
 
-fluxes = backward_euler(v8, sigma_t8, sigma_s8, chi_nu_sigmaf8, Q8)
-rf = [np.dot(sigma_f8, flux) for flux in fluxes]
-fig, ax = plt.subplots()
-ax.semilogx(times, rf)
-fig.savefig("figs/q4b")
+fluxes = backward_euler(v40, sigma_t40, sigma_s40, chi_nu_sigmaf40, Q40)
+rf = [np.dot(sigma_f40, flux) for flux in fluxes]
+#fig, ax = plt.subplots()
+ax.semilogx(times, rf, label="CASMO-40")
+#fig.savefig("figs/q4b")
+ax.legend()
 plt.show()
