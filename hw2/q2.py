@@ -94,15 +94,22 @@ def TRBDF2_step(t_start, dt, phi_old):
 # ======================================================================================
 
 def MB_step(t_start, dt, phi_old):
-    # TODO
-    pass
+    eta = v * sigma * dt
+    tmid = t_start + dt / 2
+    t_end = t_start + dt
+    Q_barm = quad(Q, tmid, t_end)[0] / (dt / 2)
+    Q_bar = quad(Q, t_start, t_end)[0] / dt 
+    Q_ = (eta / sigma) * (eta * Q_barm / 2 + Q_bar)
+    phi_new = 1 / (1 + eta + eta**2 / 2) * (phi_old + Q_)
+    return phi_new
+
 
 # ======================================================================================
 # Generate results
 # ======================================================================================
 
 # Numerical method parameters
-N = 20
+N = 100
 dt = t_final / N
 t = np.linspace(0.0, t_final, N + 1)
 
@@ -126,7 +133,7 @@ phi_CN = numerical_driver(CN_step)
 phi_TRBDF2 = numerical_driver(TRBDF2_step)
 
 # MB
-#phi_MB = numerical_driver(MB_step)
+phi_MB = numerical_driver(MB_step)
 
 # ======================================================================================
 # Plot
@@ -138,7 +145,7 @@ plt.plot(t, phi_FE, '--y', label='FE')
 plt.plot(t, phi_BE, '--ob', fillstyle='none', label='BE')
 plt.plot(t, phi_CN, '--sr', fillstyle='none', label='CN')
 plt.plot(t, phi_TRBDF2, '--*m', fillstyle='none', label='TR-BDF2')
-#plt.plot(t, phi_MB, '--Dg', fillstyle='none', label='MB')
+plt.plot(t, phi_MB, '--Dg', fillstyle='none', label='MB')
 
 plt.grid()
 plt.legend()
@@ -147,7 +154,7 @@ plt.ylim(-1.0, 10.0)
 plt.xlabel(r'$t$ [ns]')
 eta = v * sigma * dt
 plt.title(f"$N={N}$,  $\\eta={eta}$")
-plt.savefig(f'problem_2d-N={N}.png', bbox_inches='tight', pad_inches=0)
+plt.savefig(f'figs/q2_{N}')
 plt.show()
 
 ns = [1, 4, 10, 100, 1000, 10000]
@@ -160,19 +167,18 @@ for i, N in enumerate(ns):
     t = np.linspace(0, t_final, N+1)
     analytical_flux = np.array([phi_anaytical(_t) for _t in t])
     inv_analytical_norm = 1 / norm(analytical_flux, 2)
-    for j, step in enumerate([FE_step, BE_step, CN_step, TRBDF2_step]):
+    for j, step in enumerate([FE_step, BE_step, CN_step, TRBDF2_step, MB_step]):
         error = (numerical_driver(step)[-1] - analytical_flux[-1]) / analytical_flux[-1] # norm(numerical_driver(step) - analytical_flux, 2) * inv_analytical_norm
         errors[i, j] = abs(error)
 
 fig, ax = plt.subplots()
-names = ["FE", "BE", "CN", "TR-BDF2"]#, "MB"]
+names = ["FE", "BE", "CN", "TR-BDF2", "MB"]
 styles = ["--y", "--ob", "--sr", "--*m", "--Dg"]
 for i, (name, style) in enumerate(zip(names, styles)):
     _errors = errors[:, i]
     ax.loglog(dts, _errors, style, fillstyle=None, label = name)
 ax.legend()
 plt.show()
-names += ["MB"]
 
 errors = pd.DataFrame(errors, index=[f"N={n}" for n in ns], columns=names)
 print(errors)

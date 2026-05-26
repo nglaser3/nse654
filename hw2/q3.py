@@ -56,6 +56,7 @@ steady_flux = steady(Q)
 fig, ax = plt.subplots()
 ax.loglog(E_mid, yscale(steady_flux))
 ax.set_xlabel("Energy  [eV]")
+ax.set_title("Question 3 Part B")
 fig.savefig("figs/q3b")
 
 # =========================================================================== #
@@ -79,12 +80,14 @@ for it in (1, 250, 500, 600):
 ax.loglog(E_mid, yscale(steady(Q)), label="Steady")
 ax.legend()
 ax.set_xlabel("Energy  [eV]")
+ax.set_title("Question 3 part C: i")
 fig.savefig("figs/q3ci")
 
 fig, ax = plt.subplots()
 rf = [np.dot(sigma_f, flux) for flux in fluxes]
 ax.semilogx(times, rf, label="361 Group")
 ax.set_xlabel("Time  [s]")
+ax.set_title("Question 3 Part C: ii")
 #fig.savefig("figs/q3cii")
 
 # =========================================================================== #
@@ -120,6 +123,7 @@ for i, dt in enumerate(dts):
 rf = [sigma_f1 * flux for flux in fluxes]
 #fig, ax = plt.subplots()
 ax.semilogx(times, rf, label = "1 Group")
+ax.set_title("Question 3 Part E")
 #fig.savefig("figs/q3e")
 
 # =========================================================================== #
@@ -161,13 +165,12 @@ v2, sigma_t2, sigma_f2, Q2 = _collapse(bounds2)
 sigma_s2 = collapse_matrix(bounds2, dE, sigma_s, flux_collapse)
 chi_nu_sigmaf2 = collapse_matrix(bounds2, dE, np.outer(chi, nu_sigma_f), flux_collapse)
 
-
 fluxes = backward_euler(v2, sigma_t2, sigma_s2, chi_nu_sigmaf2, Q2)
 rf = [np.dot(sigma_f2, flux) for flux in fluxes]
 #fig, ax = plt.subplots()
 ax.semilogx(times, rf, label="2 Group")
+ax.set_title("Question 4 Part A")
 #fig.savefig("figs/q4a")
-#plt.show()
 
 flux_collapse = steady(Q)
 casmo40 = np.array(
@@ -188,6 +191,7 @@ fluxes = backward_euler(v40, sigma_t40, sigma_s40, chi_nu_sigmaf40, Q40)
 rf = [np.dot(sigma_f40, flux) for flux in fluxes]
 #fig, ax = plt.subplots()
 ax.semilogx(times, rf, label="CASMO-40")
-#fig.savefig("figs/q4b")
 ax.legend()
+ax.set_title("All Fission Rates")
+fig.savefig("figs/fiss_all")
 plt.show()
