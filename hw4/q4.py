@@ -3,20 +3,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots()
-N = 50
-bounds = [0.0, 10.0]
-for sigma_s in [0.6, 0.9, 0.95, 0.99]:
-  xarr = np.linspace(*bounds, N+1)
-  dx = np.diff(xarr)[0]
+N = 100
+for X0 in [9.0, 8.0, 7.0, 6.0, 5.0]:
+  bounds = [0.0, X0, 10.0]
+  xarr = np.linspace(bounds[0], bounds[-1], N+1)
+  dx=np.diff(xarr)[0]
 
   # materials
   total_xs = CrossSection(
-    values=[1.0],
+    values=[1.0, 1.0],
     xbounds=bounds,
     xarr=xarr
   )
   scattering_xs = CrossSection(
-    values=[[sigma_s]],
+    values=[[0.8],[1.0]],
     xbounds=bounds,
     xarr=xarr
   )
@@ -25,8 +25,8 @@ for sigma_s in [0.6, 0.9, 0.95, 0.99]:
   # settings
   settings = Settings(
     xarr=xarr,
-    order=8,
-    right_bc="reflective"
+    order=16,
+    right_bc="reflective",
   )
 
   # source
@@ -35,11 +35,11 @@ for sigma_s in [0.6, 0.9, 0.95, 0.99]:
   sim = Simulation(xs, settings, source)
   phi, spectral_radius = sim.solve(False)
 
-  ax.plot(xarr, phi(xarr), label=rf"$\sigma_s$ = {sigma_s}")
+  ax.plot(xarr, phi(xarr), label=rf"$X_0$ = {X0}")
 
 ax.legend()
 ax.grid(False)
-ax.set_xlim(*bounds)
+ax.set_xlim(bounds[0], bounds[-1])
 ax.set_xlabel("Position [cm]")
 ax.set_ylabel(r"Scalar Flux  [n$\cdot$cm$^{-2}$]")
 plt.show()

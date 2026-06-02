@@ -56,10 +56,11 @@ class Simulation():
     flux, errors = self.iterate(printout)
     x_arr = (self._xarr[:-1] + self._xarr[1:])/2
     spectral_radii = errors[1:] / errors[:-1]
+    ave_spectral_radius = np.average(spectral_radii)
     print(Fore.BLUE + "Spectral Radius:\n"
           f"\tFinal: \t {spectral_radii[-1]:.5e}\n"
-          f"\tAverage: {np.average(spectral_radii):.5e}")
-    return interp1d(x_arr, flux, fill_value="extrapolate") 
+          f"\tAverage: {ave_spectral_radius:.5e}")
+    return interp1d(x_arr, flux, fill_value="extrapolate"), ave_spectral_radius
 
   def iterate(self, printout=True):
     errors = []
@@ -71,10 +72,11 @@ class Simulation():
     for iteration in range(self._settings.max_its + 1):
       self.sweep()
       phi_new = self._phi_moment(0)
-      error = np.linalg.norm(phi_new - phi_old, 2) / np.linalg.norm(phi_old, 2)
+      error_top = np.linalg.norm(phi_new - phi_old, 2) 
+      error = error_top / np.linalg.norm(phi_old, 2)
       if printout:
         print(outstring(iteration, error))
-      errors.append(error)
+      errors.append(error_top)
       if error < self._settings.tolerance:
         break
       phi_old = phi_new
@@ -93,12 +95,12 @@ class Simulation():
     right_bc = self._settings.right_bc
     if left_bc == "reflective" and right_bc == "reflective":
       RuntimeError("Cannot have two reflective BCs")
-    elif left_bc == "reflective":
-      self._left_sweep(right_bc)
+    elif right_bc == "reflective":
       self._right_sweep(left_bc)
+      self._left_sweep(right_bc)
     else:
-      self._right_sweep(left_bc)
       self._left_sweep(right_bc)
+      self._right_sweep(left_bc)
 
   def _right_sweep(self, boundary_type):
     positive_mus = (self._mus > 0)
@@ -116,8 +118,11 @@ class Simulation():
       psi_n = self._psi[n]
       tau = self._total_xs.array() * self._h / self._mus[n]
       for j, psi_j in enumerate(psi_n[:-1]):
+        if self._total_xs[j] == 0.0:
+          psi_n[j+1] = psi_next
+          continue
         psi_next = (1 - tau[j] / 2) / (1 + tau[j] / 2) * psi_j
-        psi_next += tau[j] / self._total_xs[j] * self._source[n, j] / (1 + tau[j] / 2)
+        psi_next += (tau[j] / self._total_xs[j]) * self._source[n, j] / (1 + tau[j] / 2)
         psi_n[j+1] = psi_next
 
   def _left_sweep(self, boundary_type):
@@ -137,10 +142,13 @@ class Simulation():
       mu_n = (self._mus[n])
       tau = self._total_xs.array() * self._h / mu_n
       for j in reversed(range(len(psi_n[1:]))):
-        psi_j = psi_n[j]
+        psi_j = psi_n[j+1]
+        if self._total_xs[j] == 0.0:
+          psi_n[j+1] = psi_j
+          continue
         psi_prev = (1 + tau[j] / 2) / (1 - tau[j] / 2) * psi_j
-        psi_prev -= tau[j] / self._total_xs[j] * self._source[n, j-1] / (1 - tau[j] / 2)
-        psi_n[j-1] = psi_prev
+        psi_prev -= (tau[j] / self._total_xs[j]) * self._source[n, j] / (1 - tau[j] / 2)
+        psi_n[j] = psi_prev
     
   def update_source(self):
     self._source = self._indep_source.copy()
