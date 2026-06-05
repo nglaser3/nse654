@@ -37,6 +37,7 @@ class Settings():
   right_bc: str | float = "vacuum"
   tolerance: float = 1e-6
   max_its: int = 1000
+  method: str = "diamond"
 
 class Simulation():
   def __init__(self, xs:CrossSections, settings:Settings, source):
@@ -114,6 +115,14 @@ class Simulation():
     else:
       RuntimeError("bad bc type")
 
+    if self._settings.method == "diamond":
+      self._right_diamond(positive_mus)
+    elif self._settings.method == "step":
+      self._right_step_characteristic(positive_mus)
+    else:
+      raise ValueError
+
+  def _right_diamond(self, positive_mus):
     for n in np.where(positive_mus)[0]:
       psi_n = self._psi[n]
       tau = self._total_xs.array() * self._h / self._mus[n]
@@ -123,6 +132,18 @@ class Simulation():
           continue
         psi_next = (1 - tau[j] / 2) / (1 + tau[j] / 2) * psi_j
         psi_next += (tau[j] / self._total_xs[j]) * self._source[n, j] / (1 + tau[j] / 2)
+        psi_n[j+1] = psi_next
+
+  def _right_step_characteristic(self, positive_mus):
+    for n in np.where(positive_mus)[0]:
+      psi_n = self._psi[n]
+      tau = self._total_xs.array() * self._h / self._mus[n]
+      for j, psi_j in enumerate(psi_n[:-1]):
+        if self._total_xs[j] == 0.0:
+          psi_n[j+1] = psi_next
+          continue
+        psi_next = psi_j * np.exp(-tau[j])
+        psi_next +=  (self._source[n, j] / self._total_xs[j]) * (1 - np.exp(-tau[j]))
         psi_n[j+1] = psi_next
 
   def _left_sweep(self, boundary_type):
@@ -137,6 +158,14 @@ class Simulation():
     else:
       RuntimeError("bad bc type")
     
+    if self._settings.method == "diamond":
+      self._left_diamond(negative_mus)
+    elif self._settings.method == "step":
+      self._left_step_characteristic(negative_mus)
+    else:
+      raise ValueError
+
+  def _left_diamond(self, negative_mus):
     for n in np.where(negative_mus)[0]:
       psi_n = self._psi[n]
       mu_n = (self._mus[n])
@@ -149,14 +178,36 @@ class Simulation():
         psi_prev = (1 + tau[j] / 2) / (1 - tau[j] / 2) * psi_j
         psi_prev -= (tau[j] / self._total_xs[j]) * self._source[n, j] / (1 - tau[j] / 2)
         psi_n[j] = psi_prev
-    
+
+  def _left_step_characteristic(self, negative_mus):
+    for n in np.where(negative_mus)[0]:
+      psi_n = self._psi[n]
+      mu_n = (self._mus[n])
+      tau = self._total_xs.array() * self._h / abs(mu_n)
+      for j in reversed(range(len(psi_n[1:]))):
+        psi_j = psi_n[j+1]
+        if self._total_xs[j] == 0.0:
+          psi_n[j+1] = psi_j
+          continue
+        psi_prev = psi_j * np.exp(-tau[j])
+        psi_prev +=  (self._source[n, j] / self._total_xs[j]) * (1 - np.exp(-tau[j]))
+        psi_n[j] = psi_prev
+
   def update_source(self):
-    self._source = self._indep_source.copy()
+    self._source = self._indep_source.copy()/2
     sigma_s = self._scattering_xs.array()
     moments = sigma_s.T * np.asarray([ (2*n + 1)/2 * self._phi_moment(n) for n in range(self._settings.expansion + 1)])
     self._source += np.einsum("lm,lx->mx", self._legendre, moments)
 
   def _phi_moment(self, order):
-    psi_mids = (self._psi[:, :-1] + self._psi[:, 1:]) / 2 
+    if self._settings.method == "diamond":
+      psi_mids = (self._psi[:, :-1] + self._psi[:, 1:]) / 2 
+    elif self._settings.method == "step":
+      psi_mids = np.zeros((len(self._mus), len(self._total_xs.array())))
+      for n, mu_n in enumerate(self._mus):
+        tau = self._total_xs.array() * self._h / (mu_n)
+        left = self._psi[n, :-1] * (1/tau - np.exp(-tau) / (1-np.exp(-tau)))
+        right = self._psi[n, 1:] * (1 / (1-np.exp(-tau)) - 1 / tau)
+        psi_mids[n, :] = left + right
     moment = psi_mids.T @ (self._mu_weights*self._legendre[order])
     return moment
