@@ -194,7 +194,7 @@ class Simulation():
     elif isinstance(boundary_type, float):
       self._psi[negative_mus, -1] = boundary_type
     else:
-      RuntimeError("bad bc type")
+      raise RuntimeError("bad bc type")
     
     if self._settings.method == "diamond":
       self._left_diamond(negative_mus)
@@ -292,7 +292,6 @@ class Simulation():
     A += np.diag(middle) 
     
     F = np.linalg.solve(A, dsa_source)
-
     return F 
 
   def _get_beta(self):

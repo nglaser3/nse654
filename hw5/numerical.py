@@ -47,7 +47,5 @@ def omega(sigth, order, sc=False, relaxed=False):
     sim = Simulation(xs, settings, source)
     phi, spectral_radius, iteration = sim.solve(False, False)
     rhos.append(spectral_radius)
-    # if h == h_arr[-1]:
   rhos = np.asarray(rhos)
   return rhos, phi, xarr
-

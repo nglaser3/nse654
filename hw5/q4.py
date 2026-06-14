@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from analytical import omega as ana_omega
 from numerical import omega as num_omega
@@ -38,8 +39,23 @@ ax_phi.set_xlabel(r"$\sigma_t x$")
 ax.set_ylabel(r"$\rho$")
 ax_phi.set_ylabel(r"$\phi$")
 ax.set_xlim(0.0, 3.0)
+ax.set_ylim(0, 2.0)
 fig.savefig("figs/ana_and_num")
 fig_phi.savefig("figs/q4task2_validation")
 plt.show()
 
+sigt_hs = 3 / np.arange(1, 16)
+table = np.zeros((len(sigt_hs), 7))
+table[:, 0] = sigt_hs
+for i, (label, args) in enumerate(zip(labels, ([False, False], [True, False], [True, True]))):
+  ana_omegas = [ana_omega(sigt_h, 16, *args) for sigt_h in sigt_hs]
+  max_ana_omegas = [np.max(omegas) for omegas, _ in ana_omegas]
+  table[:, 2 * i + 1] = max_ana_omegas
+  num_omegas, _, _ = num_omega(sigt_hs, 16, *args)
+  table[:, 2 * i + 2] = num_omegas
 
+table_labels = ["Sigma_t h"]
+for label in labels:
+  table_labels.append(label + " Analytical")
+  table_labels.append(label + " Numerical")
+table = pd.DataFrame(table, columns=table_labels)
